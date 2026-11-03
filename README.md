@@ -42,6 +42,23 @@ PUBLIC_URL=https://methods.example.com STATIC_DIR=../web/out ./target/release/me
 
 The Rust server then hosts the SPA, `/api` and `/mcp` on one origin.
 
+## Container
+
+CI publishes `ghcr.io/mellow-technology/methods` (`latest` from `main`,
+`sha-…` per commit, semver tags from `v*` tags). The image exposes one port,
+8080, for the app, API and MCP endpoint:
+
+```sh
+docker run -p 8080:8080 \
+  -e DATABASE_URL=postgres://user:pass@db/methods \
+  -e PUBLIC_URL=https://methods.example.com \
+  -v methods-data:/data \
+  ghcr.io/mellow-technology/methods
+```
+
+Uploads go to `/data/files` unless `S3_BUCKET` is set. Build it locally with
+`docker build -t methods .`.
+
 ## Connecting a bot over MCP
 
 In **Settings → Bots & MCP**, create a bot and an access token. Then point an
