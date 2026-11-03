@@ -9,7 +9,16 @@ See [Methods.md](Methods.md) for the plan and the current status.
 ```
 server/   Rust · Actix Web · sqlx/PostgreSQL · S3-compatible storage · MCP endpoint
 web/      Next.js (static export SPA) · gui-mellow
+site/     Landing page for GitHub Pages · Next.js static export · gui-mellow
 ```
+
+## Landing page
+
+`site/` is the project's landing page, published to GitHub Pages by
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) whenever it
+changes on `main`. In the repository's settings, under Pages, set the source
+to "GitHub Actions". To work on it: `cd site && bun install && bun dev`
+(http://localhost:3001).
 
 ## Running locally
 

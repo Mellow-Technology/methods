@@ -1,0 +1,70 @@
+// The landing page's glass, matching the app's (web/app/app.scss).
+
+@mixin light-glass {
+  --gm-color-surface: rgba(255, 255, 255, 0.58);
+  --frost-edge: rgba(255, 255, 255, 0.75);
+  --frost-sheen: rgba(255, 255, 255, 0.55);
+  --frost-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.22), 0 2px 6px -2px rgba(15, 23, 42, 0.08);
+  --ambient-strength: 22%;
+}
+
+@mixin dark-glass {
+  --gm-color-surface: rgba(255, 255, 255, 0.04);
+  --frost-edge: rgba(255, 255, 255, 0.1);
+  --frost-sheen: rgba(255, 255, 255, 0.06);
+  --frost-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --ambient-strength: 26%;
+}
+
+:root {
+  @include light-glass;
+  scroll-behavior: smooth;
+  // Anchored sections land below the sticky header.
+  scroll-padding-top: calc(var(--gm-header-height) + var(--gm-space-4));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-glass;
+  }
+}
+
+[data-theme="dark"] {
+  @include dark-glass;
+}
+
+[data-theme="light"] {
+  @include light-glass;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(55rem 38rem at 8% -8%, color-mix(in srgb, var(--gm-color-primary) var(--ambient-strength), transparent), transparent 70%),
+    radial-gradient(48rem 36rem at 102% 4%, color-mix(in srgb, var(--gm-color-accent) var(--ambient-strength), transparent), transparent 70%),
+    radial-gradient(60rem 40rem at 60% 115%, color-mix(in srgb, var(--gm-color-success) calc(var(--ambient-strength) * 0.6), transparent), transparent 70%),
+    var(--gm-color-bg);
+  background-attachment: fixed;
+}
+
+// Zero specificity, so component classes can set their own spacing.
+:where(ul[class], ol[class]) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
