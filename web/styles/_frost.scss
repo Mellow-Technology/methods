@@ -1,0 +1,87 @@
+// Frosted glass for Methods, on top of gui-mellow's tokens.
+//
+// `frost` is the full effect: blurred, saturated backdrop, a coloured sheen
+// from the top-left, a bright top edge and a tinted rim. `tile` is the same
+// look without backdrop blur, for elements that appear many times (cards,
+// inputs) where dozens of blur layers would cost frame rate.
+//
+// $tint is the highlight colour: a state's colour on board columns, the
+// item's state on its panel, primary elsewhere. It's exposed as --frost-tint
+// so `glow` and children can pick it up.
+//
+// The --frost-edge, --frost-sheen and --frost-shadow tokens differ between
+// light and dark; they're defined in app.scss.
+
+@mixin -surface($tint, $opacity) {
+  --frost-tint: #{$tint};
+  background:
+    radial-gradient(130% 90% at 0% 0%, color-mix(in srgb, var(--frost-tint) 16%, transparent), transparent 55%),
+    linear-gradient(180deg, var(--frost-sheen), transparent 42%),
+    color-mix(in srgb, var(--gm-color-bg) #{$opacity}, transparent);
+  border: var(--gm-border-width) solid color-mix(in srgb, var(--frost-tint) 22%, var(--frost-edge));
+  box-shadow:
+    inset 0 1px 0 var(--gm-glass-highlight),
+    inset 0 -1px 0 color-mix(in srgb, var(--frost-tint) 12%, transparent),
+    var(--frost-shadow);
+
+  @media (prefers-reduced-transparency: reduce) {
+    background: color-mix(in srgb, var(--frost-tint) 4%, var(--gm-color-bg));
+  }
+}
+
+@mixin frost($tint: var(--gm-color-primary), $opacity: 62%, $blur: 22px) {
+  @include -surface($tint, $opacity);
+  -webkit-backdrop-filter: blur($blur) saturate(180%);
+  backdrop-filter: blur($blur) saturate(180%);
+
+  @media (prefers-reduced-transparency: reduce) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@mixin tile($tint: var(--gm-color-primary), $opacity: 78%) {
+  @include -surface($tint, $opacity);
+}
+
+// A soft light that follows the pointer while hovering. Needs the element to
+// carry `data-glow` (GlowTracker sets --mx/--my on it).
+@mixin glow($size: 16rem) {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      $size circle at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--frost-tint, var(--gm-color-primary)) 24%, transparent),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s var(--gm-ease);
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      background: color-mix(in srgb, var(--frost-tint, var(--gm-color-primary)) 10%, transparent);
+    }
+  }
+}
+
+// Tinted pills (labels, epics, reactions): a little glass bead.
+@mixin bead($color) {
+  border: var(--gm-border-width) solid color-mix(in srgb, #{$color} 45%, transparent);
+  background:
+    linear-gradient(180deg, var(--frost-sheen), transparent 70%),
+    color-mix(in srgb, #{$color} 16%, transparent);
+  box-shadow: inset 0 1px 0 var(--gm-glass-highlight);
+}

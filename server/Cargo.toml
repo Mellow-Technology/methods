@@ -1,0 +1,35 @@
+[package]
+name = "methods-server"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.87"
+description = "Methods project management: API, MCP endpoint and SPA host"
+license = "AGPL-3.0-only"
+
+[dependencies]
+actix-files = "0.6"
+actix-multipart = "0.7"
+actix-web = "4"
+anyhow = "1"
+argon2 = "0.5"
+base64 = "0.22"
+bytes = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dotenvy = "0.15"
+futures-util = "0.3"
+hex = "0.4"
+html5ever = "0.40"
+object_store = { version = "0.12", features = ["aws"] }
+openidconnect = "4"
+pulldown-cmark = { version = "0.13.6", default-features = false }
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono", "json", "migrate", "macros"] }
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2"
+uuid = { version = "1", features = ["v4", "serde"] }

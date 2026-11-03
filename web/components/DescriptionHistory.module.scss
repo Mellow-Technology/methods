@@ -1,0 +1,86 @@
+@use "gui-mellow/styles/mixins" as gm;
+@use "../styles/frost";
+
+.layout {
+  display: grid;
+  grid-template-columns: 14rem 1fr;
+  gap: var(--gm-space-4);
+  min-height: 18rem;
+
+  @include gm.below(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.versions {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.version {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+  width: 100%;
+  padding: var(--gm-space-2);
+  border: var(--gm-border-width) solid transparent;
+  border-radius: var(--gm-radius-md);
+  background: transparent;
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  text-align: left;
+  cursor: var(--gm-cursor-pointer);
+
+  > span {
+    display: grid;
+  }
+
+  &:hover {
+    background: var(--gm-color-surface-hover);
+  }
+
+  &[aria-current] {
+    @include frost.bead(var(--gm-color-primary));
+  }
+}
+
+.when {
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+}
+
+.hint {
+  padding: var(--gm-space-2);
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+}
+
+.preview {
+  @include frost.tile($opacity: 50%);
+  display: grid;
+  align-content: start;
+  gap: var(--gm-space-4);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--gm-space-4);
+  border-radius: var(--gm-radius-md);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.muted {
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-sm);
+}
+
+.error {
+  color: var(--gm-color-danger);
+  font-size: var(--gm-text-sm);
+}

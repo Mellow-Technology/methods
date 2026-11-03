@@ -1,0 +1,138 @@
+@use "gui-mellow/styles/mixins" as gm;
+@use "../../styles/frost";
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+// `header.header` outranks SiteHeader's own single-class rule.
+header.header {
+  @include frost.frost($opacity: 55%, $blur: 24px);
+  border-width: 0 0 var(--gm-border-width);
+  border-radius: 0;
+  box-shadow:
+    inset 0 -1px 0 var(--frost-edge),
+    0 8px 24px -16px color-mix(in srgb, var(--gm-color-primary) 30%, transparent);
+}
+
+.brandRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+  color: var(--gm-color-heading);
+  font-family: var(--gm-font-display);
+  font-weight: var(--gm-weight-heading);
+  text-decoration: none;
+}
+
+.switcher {
+  max-width: 14rem;
+  padding: var(--gm-space-1) var(--gm-space-5) var(--gm-space-1) var(--gm-space-2);
+  @include frost.tile($opacity: 60%);
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  cursor: var(--gm-cursor-pointer);
+
+  @include gm.below(sm) {
+    max-width: 8rem;
+  }
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+}
+
+.live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gm-color-text-faint);
+  transition: background var(--gm-duration) var(--gm-ease), box-shadow var(--gm-duration) var(--gm-ease);
+
+  &[data-status="live"] {
+    background: var(--gm-color-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gm-color-success) 22%, transparent);
+  }
+
+  &[data-status="connecting"] {
+    background: var(--gm-color-warning);
+  }
+}
+
+.menu {
+  position: relative;
+
+  summary {
+    display: block;
+    list-style: none;
+    border-radius: 50%;
+    cursor: var(--gm-cursor-pointer);
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+}
+
+.menuPanel {
+  @include frost.frost($opacity: 70%);
+  border-radius: var(--gm-radius-md);
+  position: absolute;
+  top: calc(100% + var(--gm-space-2));
+  right: 0;
+  z-index: var(--gm-z-overlay);
+  display: grid;
+  min-width: 14rem;
+  padding: var(--gm-space-2);
+}
+
+.menuName {
+  padding: var(--gm-space-1) var(--gm-space-2) 0;
+  font-weight: var(--gm-weight-medium);
+}
+
+.menuEmail {
+  padding: 0 var(--gm-space-2) var(--gm-space-2);
+  border-bottom: var(--gm-border-width) solid var(--gm-color-border-subtle);
+  margin-bottom: var(--gm-space-1);
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-sm);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: var(--gm-space-2);
+  border: 0;
+  border-radius: var(--gm-radius-sm);
+  background: none;
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  text-align: left;
+  text-decoration: none;
+  cursor: var(--gm-cursor-pointer);
+
+  &:hover {
+    background: var(--gm-color-surface-hover);
+  }
+}

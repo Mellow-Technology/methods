@@ -1,0 +1,140 @@
+@use "../styles/frost";
+
+// The padded wrapper is the hover target; the visible track is 6px.
+.bar {
+  padding-block: var(--gm-space-2);
+  cursor: default;
+}
+
+// One continuous bar: segments butt together, and only the two outer ends
+// are rounded (empty states render no element, so first/last-child are the
+// visible ends).
+.track {
+  display: flex;
+  height: 6px;
+}
+
+.segment,
+.empty {
+  min-width: 4px;
+  transition:
+    opacity var(--gm-duration) var(--gm-ease),
+    filter var(--gm-duration) var(--gm-ease);
+
+  &:first-child {
+    border-start-start-radius: var(--gm-radius-pill);
+    border-end-start-radius: var(--gm-radius-pill);
+  }
+
+  &:last-child {
+    border-start-end-radius: var(--gm-radius-pill);
+    border-end-end-radius: var(--gm-radius-pill);
+  }
+}
+
+.segment[data-dimmed] {
+  opacity: 0.45;
+}
+
+.segment[data-active] {
+  filter: saturate(1.15) brightness(1.08);
+}
+
+.empty {
+  flex: 1;
+  background: var(--gm-color-border-subtle);
+}
+
+// ---- Popover ----------------------------------------------------------------
+
+.popover {
+  @include frost.frost(var(--seg, var(--gm-color-primary)), $opacity: 74%, $blur: 18px);
+  // Undo the UA's centred popover box; StackedBar sets top/left.
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  overflow: visible;
+  display: none;
+  align-items: center;
+  gap: var(--gm-space-2);
+  padding: var(--gm-space-1) var(--gm-space-3);
+  border-radius: var(--gm-radius-md);
+  color: var(--gm-color-text);
+  font-size: var(--gm-text-sm);
+  white-space: nowrap;
+  pointer-events: none;
+
+  opacity: 0;
+  translate: 0 4px;
+  transition:
+    opacity 0.14s var(--gm-ease),
+    translate 0.14s var(--gm-ease),
+    display 0.14s allow-discrete,
+    overlay 0.14s allow-discrete;
+
+  &[data-side="bottom"] {
+    translate: 0 -4px;
+  }
+
+  &:popover-open {
+    display: flex;
+    opacity: 1;
+    translate: 0 0;
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 4px;
+    }
+  }
+
+  // Arrow: a rotated square sharing the popover's surface.
+  &::before {
+    content: "";
+    position: absolute;
+    left: var(--arrow-x, 50%);
+    width: 8px;
+    height: 8px;
+    background: color-mix(in srgb, var(--gm-color-bg) 82%, transparent);
+    border: inherit;
+    border-top: none;
+    border-left: none;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  &[data-side="top"]::before {
+    bottom: -5px;
+  }
+
+  &[data-side="bottom"]::before {
+    top: -5px;
+    transform: translateX(-50%) rotate(225deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    translate: none;
+  }
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--seg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--seg) 22%, transparent);
+}
+
+.label {
+  color: var(--gm-color-text-muted);
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+}
+
+.pct {
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+  font-variant-numeric: tabular-nums;
+}

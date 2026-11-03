@@ -1,0 +1,19 @@
+.form {
+  display: grid;
+  gap: var(--gm-space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--gm-space-3);
+}
+
+.another {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+  margin-right: auto;
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-sm);
+}

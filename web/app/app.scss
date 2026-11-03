@@ -1,0 +1,101 @@
+// App-wide touches on top of gui-mellow. Only --gm-* tokens, plus the
+// --frost-* tokens below that the frosted glass mixins read.
+@use "../styles/frost";
+
+// ---- Glass tokens -----------------------------------------------------------
+
+// gui-mellow's controls (fields, segmented controls, secondary buttons)
+// paint with --gm-color-surface; a translucent surface turns them to glass.
+@mixin light-glass {
+  --gm-color-surface: rgba(255, 255, 255, 0.58);
+  --frost-edge: rgba(255, 255, 255, 0.75);
+  --frost-sheen: rgba(255, 255, 255, 0.55);
+  --frost-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.22), 0 2px 6px -2px rgba(15, 23, 42, 0.08);
+  --ambient-strength: 22%;
+}
+
+@mixin dark-glass {
+  --gm-color-surface: rgba(255, 255, 255, 0.04);
+  --frost-edge: rgba(255, 255, 255, 0.1);
+  --frost-sheen: rgba(255, 255, 255, 0.06);
+  --frost-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --ambient-strength: 26%;
+}
+
+:root {
+  @include light-glass;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-glass;
+  }
+}
+
+[data-theme="dark"] {
+  @include dark-glass;
+}
+
+[data-theme="light"] {
+  @include light-glass;
+}
+
+// ---- Page ---------------------------------------------------------------------
+
+// Frosted glass needs something to frost: soft washes of the theme's colours
+// fixed behind the app, so panels pick up colour as they move over them.
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(55rem 38rem at 8% -8%, color-mix(in srgb, var(--gm-color-primary) var(--ambient-strength), transparent), transparent 70%),
+    radial-gradient(48rem 36rem at 102% 4%, color-mix(in srgb, var(--gm-color-accent) var(--ambient-strength), transparent), transparent 70%),
+    radial-gradient(60rem 40rem at 60% 115%, color-mix(in srgb, var(--gm-color-success) calc(var(--ambient-strength) * 0.6), transparent), transparent 70%),
+    var(--gm-color-bg);
+  background-attachment: fixed;
+}
+
+// gui-mellow dialogs, frosted. `body dialog` outranks the library's
+// single-class rule without reaching into its hashed class names.
+body dialog[open] {
+  @include frost.frost($opacity: 76%, $blur: 28px);
+}
+
+body dialog::backdrop {
+  background: color-mix(in srgb, var(--gm-color-bg) 35%, rgba(0, 0, 0, 0.3));
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+// A loading placeholder that doesn't flash for fast responses.
+.methods-loading {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-sm);
+  animation: methods-fade-in 0.2s 0.3s both;
+}
+
+@keyframes methods-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+// Visually hidden but available to screen readers.
+.methods-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Lists styled as components (they all carry a class) start bare.
+ul[class],
+ol[class] {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

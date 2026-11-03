@@ -1,0 +1,204 @@
+@use "../styles/frost";
+
+.editor {
+  @include frost.tile($opacity: 50%);
+  border-radius: var(--gm-radius-md);
+  transition: border-color var(--gm-duration) var(--gm-ease);
+
+  &:focus-within {
+    border-color: var(--gm-color-primary);
+    box-shadow:
+      inset 0 1px 0 var(--gm-glass-highlight),
+      0 0 0 3px color-mix(in srgb, var(--gm-color-primary) 18%, transparent),
+      0 0 24px -6px color-mix(in srgb, var(--gm-color-primary) 35%, transparent);
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: var(--gm-space-1);
+  border-bottom: var(--gm-border-width) solid var(--gm-color-border-subtle);
+}
+
+.tool {
+  min-width: 1.85rem;
+  height: 1.75rem;
+  padding: 0 var(--gm-space-2);
+  border: 0;
+  border-radius: var(--gm-radius-sm);
+  background: transparent;
+  color: var(--gm-color-text-muted);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  font-weight: var(--gm-weight-bold);
+  cursor: var(--gm-cursor-pointer);
+
+  &:hover:not(:disabled) {
+    background: var(--gm-color-surface-hover);
+    color: var(--gm-color-text);
+  }
+
+  &[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--gm-color-primary) 16%, transparent);
+    color: var(--gm-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gm-color-primary);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gm-space-2);
+  padding: var(--gm-space-2);
+  border-bottom: var(--gm-border-width) solid var(--gm-color-border-subtle);
+}
+
+.linkInput {
+  @include frost.tile($opacity: 60%);
+  flex: 1;
+  min-width: 12rem;
+  height: 1.85rem;
+  padding: 0 var(--gm-space-2);
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+
+  &:focus {
+    border-color: var(--gm-color-primary);
+    outline: none;
+  }
+
+  &[aria-invalid] {
+    border-color: var(--gm-color-danger);
+  }
+}
+
+.linkButton {
+  height: 1.85rem;
+  padding: 0 var(--gm-space-3);
+  border: 0;
+  border-radius: var(--gm-radius-sm);
+  background: var(--gm-color-surface-hover);
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  cursor: var(--gm-cursor-pointer);
+
+  &[type="submit"] {
+    background: var(--gm-color-primary);
+    color: var(--gm-color-on-primary, #fff);
+  }
+}
+
+.linkError {
+  color: var(--gm-color-danger);
+  font-size: var(--gm-text-xs);
+}
+
+// The editable surface.
+.content {
+  padding: var(--gm-space-3);
+  outline: none;
+
+  // TipTap's Placeholder marks the empty first paragraph.
+  :global(p.is-editor-empty:first-child)::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--gm-color-text-faint);
+    pointer-events: none;
+  }
+}
+
+// Shared by the editor and the read-only RichText, so what you type is
+// exactly what everyone sees.
+.prose {
+  line-height: var(--gm-leading);
+  overflow-wrap: anywhere;
+
+  > * + *,
+  li > * + * {
+    margin-top: var(--gm-space-2);
+  }
+
+  ul,
+  ol {
+    padding-left: 1.4em;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li + li {
+    margin-top: var(--gm-space-1);
+  }
+
+  blockquote {
+    padding-left: var(--gm-space-3);
+    border-left: 3px solid var(--gm-color-border-strong);
+    color: var(--gm-color-text-muted);
+  }
+
+  code {
+    padding: 0.1em 0.35em;
+    border-radius: var(--gm-radius-sm);
+    background: var(--gm-color-surface-sunken);
+    font-family: var(--gm-font-mono);
+    font-size: 0.88em;
+  }
+
+  pre {
+    padding: var(--gm-space-2) var(--gm-space-3);
+    border-radius: var(--gm-radius-sm);
+    background: var(--gm-color-surface-sunken);
+    font-family: var(--gm-font-mono);
+    font-size: var(--gm-text-sm);
+    white-space: pre-wrap;
+
+    code {
+      padding: 0;
+      background: none;
+      font-size: inherit;
+    }
+  }
+
+  a {
+    color: var(--gm-color-link);
+    text-decoration: underline;
+  }
+
+  strong {
+    font-weight: var(--gm-weight-bold);
+  }
+
+  h2 {
+    font-size: var(--gm-text-xl);
+  }
+
+  h3 {
+    font-size: var(--gm-text-lg);
+  }
+
+  hr {
+    border: 0;
+    border-top: var(--gm-border-width) solid var(--gm-color-border-subtle);
+  }
+}

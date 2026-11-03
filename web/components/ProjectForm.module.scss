@@ -1,0 +1,34 @@
+.form {
+  display: grid;
+  gap: var(--gm-space-4);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gm-space-3);
+}
+
+.grow {
+  flex: 1 1 14rem;
+}
+
+.ident {
+  flex: 0 1 9rem;
+}
+
+.mono {
+  font-family: var(--gm-font-mono);
+  letter-spacing: 0.05em;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gm-space-5);
+}
+
+.emoji {
+  width: 6rem;
+}

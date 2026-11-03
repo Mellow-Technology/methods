@@ -1,0 +1,77 @@
+@use "gui-mellow/styles/mixins" as gm;
+@use "../../styles/frost";
+
+.page {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--gm-space-6) var(--gm-gutter);
+  overflow: hidden;
+}
+
+.theme {
+  position: absolute;
+  z-index: 1;
+  top: var(--gm-space-4);
+  right: var(--gm-space-4);
+}
+
+.card {
+  @include frost.frost($opacity: 58%, $blur: 26px);
+  border-radius: var(--gm-radius-lg);
+  position: relative;
+  display: grid;
+  gap: var(--gm-space-5);
+  width: min(100%, 26rem);
+  padding: var(--gm-space-7) var(--gm-space-6);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+}
+
+.title {
+  font-size: var(--gm-text-2xl);
+  line-height: var(--gm-leading-tight);
+}
+
+.tagline {
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-sm);
+}
+
+.form {
+  display: grid;
+  gap: var(--gm-space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gm-space-3);
+}
+
+.wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--gm-tracking-label);
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-top: var(--gm-border-width) solid var(--gm-color-border);
+  }
+}

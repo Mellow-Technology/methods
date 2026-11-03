@@ -1,0 +1,418 @@
+@use "gui-mellow/styles/mixins" as gm;
+@use "../styles/frost";
+
+// `aside` outranks the library's own single-class rule.
+aside.drawer {
+  --gm-drawer-width: min(680px, calc(100vw - 1rem));
+  // Frosted, tinted with the item's state (the Drawer's accent). Opaque
+  // enough to read and edit comfortably over the colourful board.
+  @include frost.frost(var(--gm-drawer-accent), $opacity: 80%, $blur: 32px);
+  border-left: 2px solid var(--gm-drawer-accent);
+  border-right: 0;
+  border-radius: var(--gm-radius-lg) 0 0 var(--gm-radius-lg);
+  top: calc(var(--gm-header-height) + var(--gm-space-2));
+  bottom: var(--gm-space-2);
+}
+
+.panel {
+  display: grid;
+  gap: var(--gm-space-5);
+}
+
+.error {
+  margin-bottom: var(--gm-space-3);
+  padding: var(--gm-space-2) var(--gm-space-3);
+  border-radius: var(--gm-radius-sm);
+  background: color-mix(in srgb, var(--gm-color-danger) 12%, transparent);
+  color: var(--gm-color-danger);
+  font-size: var(--gm-text-sm);
+}
+
+.title {
+  width: 100%;
+  padding: var(--gm-space-1) var(--gm-space-2);
+  margin-inline: calc(-1 * var(--gm-space-2));
+  border: var(--gm-border-width) solid transparent;
+  border-radius: var(--gm-radius-sm);
+  background: transparent;
+  color: var(--gm-color-heading);
+  font-family: var(--gm-font-display);
+  font-size: var(--gm-text-2xl);
+  font-weight: var(--gm-weight-heading);
+  line-height: var(--gm-leading-tight);
+  resize: none;
+  field-sizing: content;
+
+  &:hover {
+    border-color: var(--gm-color-border);
+  }
+
+  &:focus {
+    border-color: var(--gm-color-primary);
+    outline: none;
+  }
+}
+
+.props {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gm-space-3);
+
+  @include gm.below(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.withIcon {
+  position: relative;
+
+  > svg {
+    position: absolute;
+    top: 0.15rem;
+    right: 0;
+  }
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gm-space-2);
+}
+
+.labelChip {
+  padding: 2px var(--gm-space-3);
+  transition: background var(--gm-duration) var(--gm-ease);
+  border: var(--gm-border-width) dashed var(--gm-color-border-strong);
+  border-radius: var(--gm-radius-pill);
+  background: transparent;
+  color: var(--gm-color-text-muted);
+  font: inherit;
+  font-size: var(--gm-text-xs);
+  cursor: var(--gm-cursor-pointer);
+
+  &.on {
+    @include frost.bead(var(--c));
+    color: var(--gm-color-text);
+  }
+}
+
+.section {
+  display: grid;
+  gap: var(--gm-space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2rem;
+
+  h3 {
+    @include gm.label;
+    color: var(--gm-color-text-muted);
+  }
+}
+
+.sectionLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gm-color-text-faint);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  cursor: var(--gm-cursor-pointer);
+
+  &:hover {
+    color: var(--gm-color-text);
+  }
+}
+
+.muted {
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-sm);
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  border-radius: var(--gm-radius-sm);
+
+  &:hover {
+    background: var(--gm-color-surface-hover);
+  }
+}
+
+.rowMain {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--gm-space-2);
+  min-width: 0;
+  padding: var(--gm-space-1) var(--gm-space-2);
+  border: 0;
+  background: none;
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  text-align: left;
+  text-decoration: none;
+  cursor: var(--gm-cursor-pointer);
+}
+
+.rowPrefix {
+  flex: none;
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-xs);
+}
+
+.rowKey {
+  flex: none;
+  color: var(--gm-color-text-muted);
+  font-family: var(--gm-font-mono);
+  font-size: var(--gm-text-xs);
+}
+
+.rowTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowHost {
+  margin-left: auto;
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+}
+
+.remove {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: var(--gm-radius-sm);
+  background: none;
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-lg);
+  cursor: var(--gm-cursor-pointer);
+
+  &:hover {
+    color: var(--gm-color-danger);
+  }
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gm-space-2);
+}
+
+.grow {
+  flex: 1 1 12rem;
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gm-space-2);
+}
+
+.reaction {
+  @include frost.tile($opacity: 55%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gm-space-1);
+  padding: 2px var(--gm-space-2);
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-color-text-muted);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+  cursor: var(--gm-cursor-pointer);
+
+  &.on {
+    @include frost.bead(var(--gm-color-primary));
+    color: var(--gm-color-text);
+  }
+}
+
+.reactionPicker {
+  position: relative;
+}
+
+.reactionMenu {
+  @include frost.frost($opacity: 70%);
+  border-radius: var(--gm-radius-md);
+  position: absolute;
+  bottom: calc(100% + var(--gm-space-1));
+  left: 0;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: var(--gm-space-1);
+
+  button {
+    padding: var(--gm-space-1);
+    border: 0;
+    border-radius: var(--gm-radius-sm);
+    background: none;
+    font-size: var(--gm-text-lg);
+    cursor: var(--gm-cursor-pointer);
+
+    &:hover {
+      background: var(--gm-color-surface-hover);
+    }
+  }
+}
+
+.dropzone {
+  border-radius: var(--gm-radius-md);
+}
+
+.attachments {
+  display: grid;
+  gap: var(--gm-space-2);
+}
+
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+}
+
+.thumb {
+  @include frost.tile($opacity: 55%);
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-color-text-muted);
+  font-family: var(--gm-font-mono);
+  font-size: var(--gm-text-xs);
+  text-decoration: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.attachmentInfo {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--gm-text-sm);
+
+  a {
+    overflow: hidden;
+    color: var(--gm-color-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    color: var(--gm-color-text-faint);
+    font-size: var(--gm-text-xs);
+  }
+}
+
+.comments {
+  display: grid;
+  gap: var(--gm-space-4);
+}
+
+.comment {
+  display: flex;
+  gap: var(--gm-space-3);
+}
+
+.commentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.commentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gm-space-2);
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-xs);
+
+  strong {
+    color: var(--gm-color-text);
+    font-size: var(--gm-text-sm);
+  }
+}
+
+.botTag {
+  @include frost.bead(var(--gm-color-accent));
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 var(--gm-space-1);
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-color-text);
+}
+
+.commentActions {
+  display: inline-flex;
+  gap: var(--gm-space-2);
+  margin-left: auto;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gm-color-text-faint);
+    font: inherit;
+    cursor: var(--gm-cursor-pointer);
+
+    &:hover {
+      color: var(--gm-color-text);
+    }
+  }
+}
+
+.prose {
+  margin-top: var(--gm-space-1);
+  font-size: var(--gm-text-sm);
+}
+
+.editComment {
+  display: grid;
+  gap: var(--gm-space-2);
+  margin-top: var(--gm-space-1);
+}
+
+.newComment {
+  display: grid;
+  justify-items: end;
+  gap: var(--gm-space-2);
+
+  > :first-child {
+    width: 100%;
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--gm-space-4);
+  border-top: var(--gm-border-width) solid var(--gm-color-border-subtle);
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-xs);
+}

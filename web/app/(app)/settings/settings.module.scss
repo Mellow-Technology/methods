@@ -1,0 +1,181 @@
+@use "gui-mellow/styles/mixins" as gm;
+@use "../../../styles/frost";
+
+.page {
+  padding-block: var(--gm-space-6) var(--gm-space-8);
+}
+
+.tab {
+  display: grid;
+  gap: var(--gm-space-5);
+  padding-top: var(--gm-space-5);
+}
+
+.form {
+  display: grid;
+  gap: var(--gm-space-4);
+  max-width: 36rem;
+
+  h3 {
+    font-size: var(--gm-text-lg);
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gm-space-3);
+
+  @include gm.below(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gm-space-3);
+  max-width: 44rem;
+}
+
+.grow {
+  flex: 1 1 16rem;
+}
+
+.profileCover {
+  position: relative;
+  height: 140px;
+  border-radius: var(--gm-radius-lg);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--gm-color-primary) 70%, transparent), transparent 70%),
+    var(--gm-color-accent);
+  background-position: center;
+  background-size: cover;
+  margin-bottom: var(--gm-space-5);
+}
+
+.profileAvatar {
+  position: absolute;
+  bottom: -28px;
+  left: var(--gm-space-5);
+  border: 4px solid var(--gm-color-bg);
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gm-space-6);
+}
+
+.list {
+  display: grid;
+  gap: var(--gm-space-1);
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: var(--gm-space-2);
+  border-radius: var(--gm-radius-md);
+
+  &:hover {
+    background: var(--gm-color-surface-hover);
+  }
+}
+
+.memberInfo {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+
+  span {
+    color: var(--gm-color-text-muted);
+    font-size: var(--gm-text-sm);
+  }
+}
+
+.roleSelect {
+  @include frost.tile($opacity: 55%);
+  padding: var(--gm-space-1) var(--gm-space-2);
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-color-text);
+  font: inherit;
+  font-size: var(--gm-text-sm);
+}
+
+.intro {
+  max-width: 44rem;
+  color: var(--gm-color-text-muted);
+}
+
+.muted {
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-sm);
+}
+
+.bots {
+  display: grid;
+  gap: var(--gm-space-4);
+}
+
+.bot {
+  @include frost.frost(var(--gm-color-accent), $opacity: 58%);
+  border-radius: var(--gm-radius-md);
+  display: grid;
+  gap: var(--gm-space-3);
+  padding: var(--gm-space-4);
+}
+
+.botHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+}
+
+.botAvatar {
+  @include frost.bead(var(--gm-color-accent));
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--gm-color-accent);
+}
+
+.tokens {
+  display: grid;
+  gap: var(--gm-space-2);
+  padding-left: calc(36px + var(--gm-space-3));
+}
+
+.token {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gm-space-3);
+  font-size: var(--gm-text-sm);
+
+  code {
+    font-family: var(--gm-font-mono);
+  }
+
+  &.revoked {
+    opacity: 0.55;
+
+    code {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.created {
+  display: grid;
+  gap: var(--gm-space-3);
+  font-size: var(--gm-text-sm);
+
+  code {
+    font-family: var(--gm-font-mono);
+  }
+}
