@@ -47,29 +47,28 @@ fn check_emoji(e: Option<String>) -> ApiResult<Option<String>> {
 
 #[derive(Deserialize)]
 pub struct CreateProject {
-    name: String,
-    identifier: String,
+    pub name: String,
+    pub identifier: String,
     #[serde(default)]
-    description: String,
-    icon_emoji: Option<String>,
-    icon_file_id: Option<Uuid>,
-    cover_file_id: Option<Uuid>,
+    pub description: String,
+    pub icon_emoji: Option<String>,
+    pub icon_file_id: Option<Uuid>,
+    pub cover_file_id: Option<Uuid>,
 }
 
-pub async fn create(
-    state: web::Data<AppState>,
-    user: AuthUser,
-    path: web::Path<Uuid>,
-    body: web::Json<CreateProject>,
-) -> ApiResult<HttpResponse> {
-    access::workspace(&state.db, *path, &user).await?;
-    let b = body.into_inner();
-    let mut tx = state.db.begin().await?;
+pub async fn create_project_for(
+    db: &sqlx::PgPool,
+    user: &AuthUser,
+    workspace_id: Uuid,
+    b: CreateProject,
+) -> ApiResult<Project> {
+    access::workspace(db, workspace_id, user).await?;
+    let mut tx = db.begin().await?;
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO projects (workspace_id, name, identifier, description, icon_emoji, icon_file_id, cover_file_id, created_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
     )
-    .bind(*path)
+    .bind(workspace_id)
     .bind(non_empty("name", &b.name)?)
     .bind(check_identifier(&b.identifier)?)
     .bind(b.description.trim())
@@ -83,9 +82,18 @@ pub async fn create(
     let target = activity::project_target(&mut tx, id, "project", id, snap.label()).await?;
     let mut c = Changes::new();
     c.value("name", &snap.name).value("identifier", &snap.identifier);
-    activity::record(&mut tx, &user, "created", &target, c.into_value()).await?;
+    activity::record(&mut tx, user, "created", &target, c.into_value()).await?;
     tx.commit().await?;
-    Ok(HttpResponse::Created().json(project_out(&state.db, id).await?))
+    project_out(db, id).await
+}
+
+pub async fn create(
+    state: web::Data<AppState>,
+    user: AuthUser,
+    path: web::Path<Uuid>,
+    body: web::Json<CreateProject>,
+) -> ApiResult<HttpResponse> {
+    Ok(HttpResponse::Created().json(create_project_for(&state.db, &user, *path, body.into_inner()).await?))
 }
 
 pub async fn get(state: web::Data<AppState>, user: AuthUser, path: web::Path<Uuid>) -> ApiResult<HttpResponse> {
@@ -208,8 +216,8 @@ pub async fn list_labels(state: web::Data<AppState>, user: AuthUser, path: web::
 
 #[derive(Deserialize)]
 pub struct LabelBody {
-    name: Option<String>,
-    color: Option<String>,
+    pub name: Option<String>,
+    pub color: Option<String>,
 }
 
 fn check_color(c: &str) -> ApiResult<String> {
@@ -218,28 +226,32 @@ fn check_color(c: &str) -> ApiResult<String> {
     if ok { Ok(c.to_lowercase()) } else { Err(bad("colour must look like #a1b2c3")) }
 }
 
+pub async fn create_label_for(db: &sqlx::PgPool, user: &AuthUser, project_id: Uuid, b: &LabelBody) -> ApiResult<Label> {
+    access::project(db, project_id, user).await?;
+    let mut tx = db.begin().await?;
+    let label = sqlx::query_as::<_, Label>(
+        "INSERT INTO labels (project_id, name, color) VALUES ($1, $2, $3) RETURNING id, project_id, name, color",
+    )
+    .bind(project_id)
+    .bind(non_empty("name", b.name.as_deref().unwrap_or(""))?)
+    .bind(check_color(b.color.as_deref().unwrap_or("#64748b"))?)
+    .fetch_one(&mut *tx)
+    .await?;
+    let target = activity::project_target(&mut tx, project_id, "label", label.id, label.name.clone()).await?;
+    let mut c = Changes::new();
+    c.value("name", &label.name).value("color", &label.color);
+    activity::record(&mut tx, user, "created", &target, c.into_value()).await?;
+    tx.commit().await?;
+    Ok(label)
+}
+
 pub async fn create_label(
     state: web::Data<AppState>,
     user: AuthUser,
     path: web::Path<Uuid>,
     body: web::Json<LabelBody>,
 ) -> ApiResult<HttpResponse> {
-    access::project(&state.db, *path, &user).await?;
-    let mut tx = state.db.begin().await?;
-    let label = sqlx::query_as::<_, Label>(
-        "INSERT INTO labels (project_id, name, color) VALUES ($1, $2, $3) RETURNING id, project_id, name, color",
-    )
-    .bind(*path)
-    .bind(non_empty("name", body.name.as_deref().unwrap_or(""))?)
-    .bind(check_color(body.color.as_deref().unwrap_or("#64748b"))?)
-    .fetch_one(&mut *tx)
-    .await?;
-    let target = activity::project_target(&mut tx, *path, "label", label.id, label.name.clone()).await?;
-    let mut c = Changes::new();
-    c.value("name", &label.name).value("color", &label.color);
-    activity::record(&mut tx, &user, "created", &target, c.into_value()).await?;
-    tx.commit().await?;
-    Ok(HttpResponse::Created().json(label))
+    Ok(HttpResponse::Created().json(create_label_for(&state.db, &user, *path, &body).await?))
 }
 
 pub async fn update_label(
@@ -343,42 +355,46 @@ pub async fn create_epic(
     Ok(HttpResponse::Created().json(create_epic_for(&state.db, &user, *path, &body).await?))
 }
 
+pub async fn update_epic_for(db: &sqlx::PgPool, user: &AuthUser, epic_id: Uuid, body: &EpicBody) -> ApiResult<Epic> {
+    access::via(db, "epics", epic_id, user).await?;
+    let name = body.name.as_deref().map(|n| non_empty("name", n)).transpose()?;
+    let color = body.color.as_deref().map(check_color).transpose()?;
+    let mut tx = db.begin().await?;
+    const FIELDS: &str = "SELECT project_id, name, description, color FROM epics WHERE id = $1";
+    let before: (Uuid, String, String, String) =
+        sqlx::query_as(&format!("{FIELDS} FOR UPDATE")).bind(epic_id).fetch_one(&mut *tx).await?;
+    sqlx::query(
+        "UPDATE epics SET name = COALESCE($2, name), description = COALESCE($3, description),
+                          color = COALESCE($4, color), updated_at = now() WHERE id = $1",
+    )
+    .bind(epic_id)
+    .bind(name)
+    .bind(body.description.as_deref().map(str::trim))
+    .bind(color)
+    .execute(&mut *tx)
+    .await?;
+    let after: (Uuid, String, String, String) = sqlx::query_as(FIELDS).bind(epic_id).fetch_one(&mut *tx).await?;
+    let mut c = Changes::new();
+    c.set("name", &before.1, &after.1).set("description", &before.2, &after.2).set("color", &before.3, &after.3);
+    if !c.is_empty() {
+        let target = activity::project_target(&mut tx, after.0, "epic", epic_id, after.1.clone()).await?;
+        activity::record(&mut tx, user, "updated", &target, c.into_value()).await?;
+    }
+    tx.commit().await?;
+    let epic = sqlx::query_as::<_, Epic>(&format!("SELECT {EPIC_COLUMNS} FROM epics e WHERE e.id = $1"))
+        .bind(epic_id)
+        .fetch_one(db)
+        .await?;
+    Ok(epic)
+}
+
 pub async fn update_epic(
     state: web::Data<AppState>,
     user: AuthUser,
     path: web::Path<Uuid>,
     body: web::Json<EpicBody>,
 ) -> ApiResult<HttpResponse> {
-    access::via(&state.db, "epics", *path, &user).await?;
-    let name = body.name.as_deref().map(|n| non_empty("name", n)).transpose()?;
-    let color = body.color.as_deref().map(check_color).transpose()?;
-    let mut tx = state.db.begin().await?;
-    const FIELDS: &str = "SELECT project_id, name, description, color FROM epics WHERE id = $1";
-    let before: (Uuid, String, String, String) =
-        sqlx::query_as(&format!("{FIELDS} FOR UPDATE")).bind(*path).fetch_one(&mut *tx).await?;
-    sqlx::query(
-        "UPDATE epics SET name = COALESCE($2, name), description = COALESCE($3, description),
-                          color = COALESCE($4, color), updated_at = now() WHERE id = $1",
-    )
-    .bind(*path)
-    .bind(name)
-    .bind(body.description.as_deref().map(str::trim))
-    .bind(color)
-    .execute(&mut *tx)
-    .await?;
-    let after: (Uuid, String, String, String) = sqlx::query_as(FIELDS).bind(*path).fetch_one(&mut *tx).await?;
-    let mut c = Changes::new();
-    c.set("name", &before.1, &after.1).set("description", &before.2, &after.2).set("color", &before.3, &after.3);
-    if !c.is_empty() {
-        let target = activity::project_target(&mut tx, after.0, "epic", *path, after.1.clone()).await?;
-        activity::record(&mut tx, &user, "updated", &target, c.into_value()).await?;
-    }
-    tx.commit().await?;
-    let epic = sqlx::query_as::<_, Epic>(&format!("SELECT {EPIC_COLUMNS} FROM epics e WHERE e.id = $1"))
-        .bind(*path)
-        .fetch_one(&state.db)
-        .await?;
-    Ok(HttpResponse::Ok().json(epic))
+    Ok(HttpResponse::Ok().json(update_epic_for(&state.db, &user, *path, &body).await?))
 }
 
 pub async fn delete_epic(state: web::Data<AppState>, user: AuthUser, path: web::Path<Uuid>) -> ApiResult<HttpResponse> {
