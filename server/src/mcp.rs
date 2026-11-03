@@ -14,7 +14,10 @@ use crate::{
     auth::AuthUser,
     error::{ApiError, ApiResult, bad},
     models::{Comment, Member, Project, PROJECT_COLUMNS, WorkItemDetail, Workspace},
-    routes::projects::{EpicBody, create_epic_for, list_epics_for, list_labels_for},
+    routes::projects::{
+        CreateProject, EpicBody, LabelBody, create_epic_for, create_label_for, create_project_for, list_epics_for,
+        list_labels_for, update_epic_for,
+    },
     service::{self, CreateWorkItem, UpdateWorkItem, WorkItemFilter},
 };
 
@@ -195,6 +198,41 @@ async fn call_tool(state: &AppState, user: &AuthUser, name: &str, a: Value) -> R
             .await?;
             json!({ "projects": rows })
         }
+        "create_project" => {
+            #[derive(Deserialize)]
+            struct A {
+                workspace_id: Option<Uuid>,
+                name: String,
+                identifier: String,
+                description: Option<String>,
+                icon_emoji: Option<String>,
+            }
+            let a: A = args(a)?;
+            let workspace_id = match a.workspace_id {
+                Some(id) => id,
+                None => {
+                    let ids: Vec<Uuid> =
+                        sqlx::query_scalar("SELECT workspace_id FROM workspace_members WHERE user_id = $1")
+                            .bind(user.id)
+                            .fetch_all(db)
+                            .await?;
+                    match ids.as_slice() {
+                        [id] => *id,
+                        [] => return Err(ApiError::NotFound.into()),
+                        _ => return Err(bad("you belong to several workspaces; pass workspace_id").into()),
+                    }
+                }
+            };
+            let body = CreateProject {
+                name: a.name,
+                identifier: a.identifier,
+                description: a.description.unwrap_or_default(),
+                icon_emoji: a.icon_emoji,
+                icon_file_id: None,
+                cover_file_id: None,
+            };
+            json!({ "project": create_project_for(db, user, workspace_id, body).await? })
+        }
         "get_project" => {
             let a: ProjectArg = args(a)?;
             let id = resolve_project(state, user, &a.project).await?;
@@ -303,6 +341,33 @@ async fn call_tool(state: &AppState, user: &AuthUser, name: &str, a: Value) -> R
             let body = EpicBody { name: Some(a.name), description: a.description, color: None };
             json!({ "epic": create_epic_for(db, user, pid, &body).await? })
         }
+        "update_epic" => {
+            #[derive(Deserialize)]
+            struct A {
+                epic_id: Uuid,
+                #[serde(flatten)]
+                body: EpicBody,
+            }
+            let a: A = args(a)?;
+            json!({ "epic": update_epic_for(db, user, a.epic_id, &a.body).await? })
+        }
+        "create_label" => {
+            #[derive(Deserialize)]
+            struct A {
+                project: String,
+                #[serde(flatten)]
+                body: LabelBody,
+            }
+            let a: A = args(a)?;
+            let pid = resolve_project(state, user, &a.project).await?;
+            json!({ "label": create_label_for(db, user, pid, &a.body).await? })
+        }
+        "delete_work_item" => {
+            let a: ItemArg = args(a)?;
+            let id = service::resolve(db, user, &a.work_item).await?;
+            service::delete(db, user, id).await?;
+            json!({ "deleted": id })
+        }
         "get_activity" => {
             #[derive(Deserialize)]
             struct A {
@@ -349,6 +414,7 @@ fn tools() -> Value {
         Value::Object(m)
     };
     let read_only = json!({ "readOnlyHint": true });
+    let color = json!({ "type": "string", "description": "Hex colour such as #6366f1" });
 
     json!([
         { "name": "whoami", "description": "Your own user id and name.",
@@ -358,6 +424,14 @@ fn tools() -> Value {
         { "name": "list_projects", "description": "Projects you can see, optionally in one workspace.",
           "inputSchema": { "type": "object", "properties": { "workspace_id": uuid("Workspace id") } },
           "annotations": read_only },
+        { "name": "create_project",
+          "description": "Create a project in a workspace. workspace_id may be left out when you belong to only one workspace.",
+          "inputSchema": { "type": "object", "required": ["name", "identifier"], "properties": {
+              "workspace_id": uuid("Workspace id"),
+              "name": { "type": "string" },
+              "identifier": { "type": "string", "description": "Short key prefix for work items, 2-10 letters or digits starting with a letter, e.g. \"MTH\"" },
+              "description": { "type": "string" },
+              "icon_emoji": { "type": "string", "description": "A single emoji" } } } },
         { "name": "get_project",
           "description": "A project with its labels, epics and the members work can be assigned to.",
           "inputSchema": { "type": "object", "properties": { "project": project }, "required": ["project"] },
@@ -394,6 +468,17 @@ fn tools() -> Value {
         { "name": "create_epic", "description": "Create an epic to group work items in a project.",
           "inputSchema": { "type": "object", "required": ["project", "name"], "properties": {
               "project": project, "name": { "type": "string" }, "description": { "type": "string" } } } },
+        { "name": "update_epic", "description": "Rename an epic or change its description or colour. Only the fields you pass change.",
+          "inputSchema": { "type": "object", "required": ["epic_id"], "properties": {
+              "epic_id": { "type": "string", "format": "uuid" }, "name": { "type": "string" },
+              "description": { "type": "string" }, "color": color.clone() } } },
+        { "name": "create_label", "description": "Create a label in a project.",
+          "inputSchema": { "type": "object", "required": ["project", "name"], "properties": {
+              "project": project, "name": { "type": "string" }, "color": color } } },
+        { "name": "delete_work_item",
+          "description": "Move a work item to the trash. It can be restored by undoing the deletion in its history.",
+          "annotations": { "destructiveHint": true },
+          "inputSchema": { "type": "object", "required": ["work_item"], "properties": { "work_item": item } } },
         { "name": "get_activity",
           "description": "History of a work item or project, newest first: who changed what, with old and new values. Page with `before` (an entry id).",
           "annotations": read_only,
