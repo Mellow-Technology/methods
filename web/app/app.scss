@@ -44,14 +44,23 @@
 
 // Frosted glass needs something to frost: soft washes of the theme's colours
 // fixed behind the app, so panels pick up colour as they move over them.
+// The washes are a fixed layer rather than `background-attachment: fixed`,
+// which makes the browser repaint the whole page on every scroll frame.
 body {
   min-height: 100dvh;
-  background:
-    radial-gradient(55rem 38rem at 8% -8%, color-mix(in srgb, var(--gm-color-primary) var(--ambient-strength), transparent), transparent 70%),
-    radial-gradient(48rem 36rem at 102% 4%, color-mix(in srgb, var(--gm-color-accent) var(--ambient-strength), transparent), transparent 70%),
-    radial-gradient(60rem 40rem at 60% 115%, color-mix(in srgb, var(--gm-color-success) calc(var(--ambient-strength) * 0.6), transparent), transparent 70%),
-    var(--gm-color-bg);
-  background-attachment: fixed;
+  background: var(--gm-color-bg);
+
+  &::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(55rem 38rem at 8% -8%, color-mix(in srgb, var(--gm-color-primary) var(--ambient-strength), transparent), transparent 70%),
+      radial-gradient(48rem 36rem at 102% 4%, color-mix(in srgb, var(--gm-color-accent) var(--ambient-strength), transparent), transparent 70%),
+      radial-gradient(60rem 40rem at 60% 115%, color-mix(in srgb, var(--gm-color-success) calc(var(--ambient-strength) * 0.6), transparent), transparent 70%);
+    pointer-events: none;
+  }
 }
 
 // gui-mellow dialogs, frosted. `body dialog` outranks the library's

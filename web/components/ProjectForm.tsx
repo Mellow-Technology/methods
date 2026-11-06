@@ -1,8 +1,11 @@
 "use client";
 
+import { Button } from "gui-mellow/Button";
 import { TextField } from "gui-mellow/Field";
 import type { Project } from "@/lib/api";
-import { ImagePicker } from "./ImagePicker";
+import { CoverField, CoverFieldError, CoverSlot } from "./CoverField";
+import { useImageUpload } from "./useImageUpload";
+import { ProjectIcon } from "./ProjectIcon";
 import styles from "./ProjectForm.module.scss";
 
 export interface ProjectFormValue {
@@ -59,6 +62,46 @@ function suggestIdentifier(name: string) {
   return /^[A-Z]/.test(id) ? id : `P${id}`.slice(0, 5);
 }
 
+/** The project's icon as it will appear, with its image and emoji controls. */
+function IconControls({ value, onChange }: { value: ProjectFormValue; onChange: (v: ProjectFormValue) => void }) {
+  const upload = useImageUpload((id, url) => onChange({ ...value, icon_file_id: id, icon_url: url }));
+  const preview = {
+    name: value.name,
+    identifier: value.identifier || "?",
+    icon_url: value.icon_url,
+    icon_emoji: value.icon_emoji.trim() || null,
+  };
+  return (
+    <>
+      <CoverSlot label="Change icon" onClick={upload.choose}>
+        <ProjectIcon project={preview} size={64} />
+      </CoverSlot>
+      <div className={styles.iconControls}>
+        <Button size="sm" variant="secondary" loading={upload.busy} onClick={upload.choose}>
+          {value.icon_url ? "Replace icon" : "Upload icon"}
+        </Button>
+        {value.icon_url && (
+          <Button size="sm" variant="ghost" onClick={() => onChange({ ...value, icon_file_id: null, icon_url: null })}>
+            Remove
+          </Button>
+        )}
+        <TextField
+          label="Emoji"
+          hideLabel
+          value={value.icon_emoji}
+          maxLength={8}
+          placeholder="or emoji 🚀"
+          title={value.icon_url ? "Shown when there's no icon image" : undefined}
+          className={styles.emoji}
+          onChange={(e) => onChange({ ...value, icon_emoji: e.target.value })}
+        />
+      </div>
+      {upload.error && <CoverFieldError>{upload.error}</CoverFieldError>}
+      {upload.input}
+    </>
+  );
+}
+
 export function ProjectForm({
   value,
   onChange,
@@ -73,6 +116,9 @@ export function ProjectForm({
 
   return (
     <div className={styles.form}>
+      <CoverField url={value.cover_url} onChange={(id, url) => onChange({ ...value, cover_file_id: id, cover_url: url })}>
+        <IconControls value={value} onChange={onChange} />
+      </CoverField>
       <div className={styles.row}>
         <TextField
           label="Name"
@@ -104,27 +150,6 @@ export function ProjectForm({
         value={value.description}
         onChange={(e) => set("description", e.target.value)}
       />
-      <div className={styles.images}>
-        <ImagePicker
-          label="Icon"
-          url={value.icon_url}
-          onChange={(id, url) => onChange({ ...value, icon_file_id: id, icon_url: url })}
-        />
-        <TextField
-          label="…or emoji"
-          value={value.icon_emoji}
-          maxLength={8}
-          placeholder="🚀"
-          className={styles.emoji}
-          onChange={(e) => set("icon_emoji", e.target.value)}
-        />
-        <ImagePicker
-          label="Cover image"
-          shape="cover"
-          url={value.cover_url}
-          onChange={(id, url) => onChange({ ...value, cover_file_id: id, cover_url: url })}
-        />
-      </div>
     </div>
   );
 }

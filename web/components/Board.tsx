@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type DragEvent } from "react";
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Avatar } from "gui-mellow/Avatar";
 import { toneColor } from "gui-mellow/utils";
 import { STATES, formatDate, type Epic, type Label, type State, type WorkItem } from "@/lib/api";
@@ -23,7 +23,12 @@ function isOverdue(item: WorkItem) {
   return new Date(`${item.due_date}T23:59:59`) < new Date();
 }
 
-function ItemCard({
+/**
+ * Memoised: every callback it gets is stable, so a card re-renders only when
+ * its own item, epic, labels or selection change, not on each drag-over or
+ * live refresh of the board.
+ */
+const ItemCard = memo(function ItemCard({
   item,
   labels,
   epic,
@@ -36,8 +41,8 @@ function ItemCard({
   labels: Map<string, Label>;
   epic: Epic | undefined;
   selected: boolean;
-  onOpen: () => void;
-  onDragStart: (e: DragEvent) => void;
+  onOpen: (item: WorkItem) => void;
+  onDragStart: (item: WorkItem, e: DragEvent) => void;
   onDragEnd: () => void;
 }) {
   return (
@@ -45,9 +50,9 @@ function ItemCard({
       type="button"
       className={`${styles.card} ${selected ? styles.selected : ""}`}
       draggable
-      onDragStart={onDragStart}
+      onDragStart={(e) => onDragStart(item, e)}
       onDragEnd={onDragEnd}
-      onClick={onOpen}
+      onClick={() => onOpen(item)}
       data-item={item.id}
       data-glow
     >
@@ -97,7 +102,7 @@ function ItemCard({
       </span>
     </button>
   );
-}
+});
 
 /** Where a new item lands between neighbours. */
 function orderBetween(before: WorkItem | undefined, after: WorkItem | undefined) {
@@ -110,6 +115,23 @@ function orderBetween(before: WorkItem | undefined, after: WorkItem | undefined)
 export function Board({ items, labels, epics, selectedKey, onOpen, onMove, onAdd, hiddenStates = [] }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [drop, setDrop] = useState<{ state: State; index: number } | null>(null);
+
+  // The page passes a new onOpen on each render; cards get a stable wrapper.
+  const onOpenRef = useRef(onOpen);
+  useLayoutEffect(() => {
+    onOpenRef.current = onOpen;
+  });
+  const openCard = useCallback((item: WorkItem) => onOpenRef.current(item), []);
+  const startDrag = useCallback((item: WorkItem, e: DragEvent) => {
+    e.dataTransfer.setData("text/plain", item.key);
+    e.dataTransfer.effectAllowed = "move";
+    // Let the browser snapshot the card before we hide it.
+    requestAnimationFrame(() => setDragId(item.id));
+  }, []);
+  const endDrag = useCallback(() => {
+    setDragId(null);
+    setDrop(null);
+  }, []);
 
   const columns = useMemo(() => {
     const by = new Map<State, WorkItem[]>(STATES.map((s) => [s.value, []]));
@@ -184,17 +206,9 @@ export function Board({ items, labels, epics, selectedKey, onOpen, onMove, onAdd
                       labels={labels}
                       epic={item.epic_id ? epics.get(item.epic_id) : undefined}
                       selected={item.key === selectedKey}
-                      onOpen={() => onOpen(item)}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", item.key);
-                        e.dataTransfer.effectAllowed = "move";
-                        // Let the browser snapshot the card before we hide it.
-                        requestAnimationFrame(() => setDragId(item.id));
-                      }}
-                      onDragEnd={() => {
-                        setDragId(null);
-                        setDrop(null);
-                      }}
+                      onOpen={openCard}
+                      onDragStart={startDrag}
+                      onDragEnd={endDrag}
                     />
                   </div>
                 ))}

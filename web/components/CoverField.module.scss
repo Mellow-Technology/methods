@@ -1,0 +1,75 @@
+.field {
+  display: grid;
+}
+
+// Matches the project page and profile covers, including the fallback wash.
+.cover {
+  position: relative;
+  height: 120px;
+  border-radius: var(--gm-radius-lg);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--gm-color-primary) 70%, transparent), transparent 70%),
+    var(--gm-color-accent);
+  background-position: center;
+  background-size: cover;
+}
+
+.coverActions {
+  position: absolute;
+  top: var(--gm-space-2);
+  right: var(--gm-space-2);
+  display: flex;
+  gap: var(--gm-space-2);
+}
+
+.below {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gm-space-3);
+  padding-inline: var(--gm-space-4);
+}
+
+.slot {
+  position: relative;
+  display: grid;
+  flex: none;
+  margin-top: -32px;
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid color-mix(in srgb, var(--gm-color-bg) 80%, transparent);
+  border-radius: var(--gm-radius-md);
+  background: none;
+  box-shadow: var(--gm-shadow-sm);
+  cursor: var(--gm-cursor-pointer);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+
+  &.round {
+    border-radius: 50%;
+  }
+
+  &:hover .slotHint,
+  &:focus-visible .slotHint {
+    opacity: 1;
+  }
+}
+
+.slotHint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: var(--gm-text-xs);
+  font-weight: var(--gm-weight-medium);
+  opacity: 0;
+  transition: opacity var(--gm-duration) var(--gm-ease);
+}
+
+.error {
+  margin-top: var(--gm-space-2);
+  color: var(--gm-color-danger);
+  font-size: var(--gm-text-sm);
+}

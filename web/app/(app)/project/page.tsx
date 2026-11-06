@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "gui-mellow/Alert";
 import { Button } from "gui-mellow/Button";
 import { Drawer } from "gui-mellow/Drawer";
@@ -58,7 +58,8 @@ function ProjectBoard() {
 
   const loadItems = useCallback(async () => {
     if (!projectId) return;
-    setItems(await api.get<WorkItem[]>(`/projects/${projectId}/work-items`));
+    const next = await api.get<WorkItem[]>(`/projects/${projectId}/work-items`);
+    setItems((prev) => reuseUnchanged(prev, next));
   }, [projectId]);
 
   // ---- Live updates ----
@@ -154,19 +155,23 @@ function ProjectBoard() {
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels]);
   const epicMap = useMemo(() => new Map(epics.map((e) => [e.id, e])), [epics]);
 
+  // The board follows the filters a beat behind, so typing in the search box
+  // never waits on re-rendering the columns.
+  const applied = useDeferredValue(filters);
   const visible = useMemo(() => {
-    const q = filters.q.trim().toLowerCase();
+    const f = applied;
+    const q = f.q.trim().toLowerCase();
     return items.filter((i) => {
       if (q && !i.title.toLowerCase().includes(q) && !i.key.toLowerCase().includes(q)) return false;
-      if (filters.assignee === "me" && i.assignee_id !== me.id) return false;
-      if (filters.assignee === "none" && i.assignee_id) return false;
-      if (filters.assignee && !["me", "none"].includes(filters.assignee) && i.assignee_id !== filters.assignee) return false;
-      if (filters.priority && i.priority !== filters.priority) return false;
-      if (filters.epic && i.epic_id !== filters.epic) return false;
-      if (filters.label && !i.label_ids.includes(filters.label)) return false;
+      if (f.assignee === "me" && i.assignee_id !== me.id) return false;
+      if (f.assignee === "none" && i.assignee_id) return false;
+      if (f.assignee && !["me", "none"].includes(f.assignee) && i.assignee_id !== f.assignee) return false;
+      if (f.priority && i.priority !== f.priority) return false;
+      if (f.epic && i.epic_id !== f.epic) return false;
+      if (f.label && !i.label_ids.includes(f.label)) return false;
       return true;
     });
-  }, [items, filters, me.id]);
+  }, [items, applied, me.id]);
 
   const onChanged = useCallback((id: string, updated: WorkItem | null) => {
     setItems((list) => {
@@ -207,7 +212,7 @@ function ProjectBoard() {
   const set = (k: keyof Filters) => (e: { target: { value: string } }) => setFilters((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-fill-viewport>
       <header className={styles.header}>
         <div
           className={styles.cover}
@@ -378,6 +383,37 @@ function ProjectBoard() {
       />
     </main>
   );
+}
+
+function sameItem(a: WorkItem, b: WorkItem) {
+  const ka = Object.keys(a) as (keyof WorkItem)[];
+  if (ka.length !== Object.keys(b).length) return false;
+  return ka.every((k) => {
+    const x = a[k];
+    const y = b[k];
+    if (Array.isArray(x) && Array.isArray(y)) return x.length === y.length && x.every((v, i) => v === y[i]);
+    return x === y;
+  });
+}
+
+/**
+ * A refetched list with the old objects kept wherever nothing changed, so
+ * memoised cards skip re-rendering. Returns `prev` itself when the whole list
+ * is unchanged, so a live refresh that changed nothing renders nothing.
+ */
+function reuseUnchanged(prev: WorkItem[], next: WorkItem[]): WorkItem[] {
+  const old = new Map(prev.map((i) => [i.id, i]));
+  let identical = prev.length === next.length;
+  const merged = next.map((n, index) => {
+    const o = old.get(n.id);
+    if (o && sameItem(o, n)) {
+      if (prev[index] !== o) identical = false;
+      return o;
+    }
+    identical = false;
+    return n;
+  });
+  return identical ? prev : merged;
 }
 
 /** Keeps only the fields the board holds, so detail payloads don't pile up in state. */
