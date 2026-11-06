@@ -5,6 +5,9 @@
   display: grid;
   grid-auto-columns: minmax(17rem, 1fr);
   grid-auto-flow: column;
+  // One row as tall as the board, so columns don't grow with their cards
+  // and each scrolls on its own.
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--gm-space-3);
   flex: 1;
   min-height: 0;
@@ -13,12 +16,20 @@
   overscroll-behavior-x: contain;
 }
 
-// Each column is a pane of glass tinted with its state's colour.
+// Each column is a pane of glass tinted with its state's colour. It's a tile
+// (no backdrop blur): behind it there's only the page's soft colour wash,
+// where blur shows no difference but costs a blur pass over a large area.
 .column {
-  @include frost.frost(var(--c), $opacity: 42%, $blur: 18px);
-  display: flex;
-  flex-direction: column;
-  min-height: 12rem;
+  @include frost.tile(var(--c), $opacity: 42%);
+  --header-h: 2.75rem;
+  // The header and the card list share one grid cell: the list fills the
+  // whole column and scrolls, and the header floats over its top. Cards
+  // and the list's scrollbar both pass under the frosted header, and the
+  // header stays full width whether or not the scrollbar takes up space.
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
   border-radius: var(--gm-radius-lg);
   transition:
     border-color var(--gm-duration) var(--gm-ease),
@@ -34,12 +45,19 @@
 }
 
 .columnHeader {
-  position: sticky;
-  top: 0;
+  // Frosted so cards blur as they scroll under it. One small blur per
+  // column is cheap, unlike blurring every card or the whole column.
+  @include frost.frost(var(--c), $opacity: 30%, $blur: 12px);
+  grid-area: 1 / 1;
+  align-self: start;
+  z-index: 1;
+  height: var(--header-h);
+  border-width: 0;
+  box-shadow: 0 6px 12px -10px color-mix(in srgb, var(--c) 40%, rgba(0, 0, 0, 0.4));
   display: flex;
   align-items: center;
   gap: var(--gm-space-2);
-  padding: var(--gm-space-3) var(--gm-space-3) var(--gm-space-2);
+  padding: 0 var(--gm-space-3);
   border-top: 3px solid var(--c);
   border-radius: var(--gm-radius-lg) var(--gm-radius-lg) 0 0;
 
@@ -74,11 +92,17 @@
 }
 
 .cards {
+  grid-area: 1 / 1;
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: var(--gm-space-2);
-  padding: var(--gm-space-1) var(--gm-space-2) var(--gm-space-3);
+  padding: calc(var(--header-h) + var(--gm-space-2)) var(--gm-space-2) var(--gm-space-3);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  // Keyboard focus scrolls cards clear of the header, not under it.
+  scroll-padding-block: calc(var(--header-h) + var(--gm-space-2)) var(--gm-space-3);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--c) 40%, transparent) transparent;
 }
 
 .slot {
@@ -104,6 +128,8 @@
   // what's behind. The glow follows the pointer in the column's colour.
   @include frost.tile(var(--c), $opacity: 72%);
   @include frost.glow(12rem);
+  // No content-visibility: measured on a 200-item board it tripled style,
+  // layout and paint work while scrolling (cards laid out on demand).
   display: grid;
   gap: var(--gm-space-2);
   width: 100%;
