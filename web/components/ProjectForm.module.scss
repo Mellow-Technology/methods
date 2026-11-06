@@ -22,13 +22,13 @@
   letter-spacing: 0.05em;
 }
 
-.images {
+.iconControls {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--gm-space-5);
+  align-items: center;
+  gap: var(--gm-space-2);
 }
 
 .emoji {
-  width: 6rem;
+  width: 8rem;
 }

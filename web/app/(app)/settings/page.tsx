@@ -11,7 +11,8 @@ import { ConfirmDialog, Dialog } from "gui-mellow/Dialog";
 import { SelectField, TextField } from "gui-mellow/Field";
 import { PageHeader } from "gui-mellow/PageHeader";
 import { Tabs } from "gui-mellow/Tabs";
-import { ImagePicker } from "@/components/ImagePicker";
+import { CoverField, CoverFieldError, CoverSlot } from "@/components/CoverField";
+import { useImageUpload } from "@/components/useImageUpload";
 import { BotIcon } from "@/components/Icons";
 import { api, errorMessage, timeAgo, type Bot, type BotToken, type Member, type User } from "@/lib/api";
 import { useLiveRefresh } from "@/lib/live";
@@ -47,17 +48,28 @@ function Profile() {
 
   const save = (body: Record<string, unknown>, ok = "Saved") =>
     run(async () => setMe(await api.patch<User>("/me", body)), ok);
+  const avatar = useImageUpload((id) => save({ avatar_file_id: id }, "Avatar updated"));
 
   return (
     <div className={styles.tab}>
       {node}
-      <div className={styles.profileCover} style={me.cover_url ? { backgroundImage: `url(${me.cover_url})` } : undefined}>
-        <Avatar name={me.display_name} src={me.avatar_url ?? undefined} size={72} className={styles.profileAvatar} />
-      </div>
-      <div className={styles.images}>
-        <ImagePicker label="Avatar" shape="round" url={me.avatar_url} onChange={(id) => save({ avatar_file_id: id }, "Avatar updated")} />
-        <ImagePicker label="Cover image" shape="cover" url={me.cover_url} onChange={(id) => save({ cover_file_id: id }, "Cover updated")} />
-      </div>
+      <CoverField url={me.cover_url} onChange={(id) => save({ cover_file_id: id }, id ? "Cover updated" : "Cover removed")}>
+        <CoverSlot label="Change avatar" round onClick={avatar.choose}>
+          <Avatar name={me.display_name} src={me.avatar_url ?? undefined} size={72} />
+        </CoverSlot>
+        <div className={styles.avatarControls}>
+          <Button size="sm" variant="secondary" loading={avatar.busy} onClick={avatar.choose}>
+            {me.avatar_url ? "Replace avatar" : "Upload avatar"}
+          </Button>
+          {me.avatar_url && (
+            <Button size="sm" variant="ghost" onClick={() => save({ avatar_file_id: null }, "Avatar removed")}>
+              Remove
+            </Button>
+          )}
+        </div>
+        {avatar.error && <CoverFieldError>{avatar.error}</CoverFieldError>}
+        {avatar.input}
+      </CoverField>
       <form
         className={styles.form}
         onSubmit={(e) => {
