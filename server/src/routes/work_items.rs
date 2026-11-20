@@ -334,6 +334,16 @@ pub async fn workspace_activity(
     Ok(HttpResponse::Ok().json(activity::list(&state.db, Scope::Workspace(*path), &page).await?))
 }
 
+pub async fn workspace_activity_stats(
+    state: web::Data<AppState>,
+    user: AuthUser,
+    path: web::Path<Uuid>,
+    query: web::Query<activity::StatsQuery>,
+) -> ApiResult<HttpResponse> {
+    access::workspace(&state.db, *path, &user).await?;
+    Ok(HttpResponse::Ok().json(activity::daily_stats(&state.db, *path, &query).await?))
+}
+
 pub async fn revert(state: web::Data<AppState>, user: AuthUser, path: web::Path<i64>) -> ApiResult<HttpResponse> {
     Ok(HttpResponse::Ok().json(activity::revert(&state.db, &user, *path).await?))
 }

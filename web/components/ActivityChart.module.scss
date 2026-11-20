@@ -1,0 +1,74 @@
+@use "../styles/frost";
+
+.section {
+  display: grid;
+  gap: var(--gm-space-6);
+  margin-bottom: var(--gm-space-8);
+}
+
+.panel {
+  @include frost.frost($opacity: 58%);
+  position: relative;
+  border-radius: var(--gm-radius-lg);
+  padding: var(--gm-space-5);
+}
+
+.canvas {
+  height: 260px;
+}
+
+.empty {
+  position: absolute;
+  inset: calc(var(--gm-space-5) + 40px) var(--gm-space-5) calc(var(--gm-space-5) + 28px);
+  display: grid;
+  place-items: center;
+  color: var(--gm-color-text-faint);
+  font-size: var(--gm-text-sm);
+  pointer-events: none;
+}
+
+// The tooltip's content, frosted like the rest. ECharts' own tooltip element
+// stays transparent and unpadded around it.
+.tooltip {
+  @include frost.frost($opacity: 76%, $blur: 18px);
+  border-radius: var(--gm-radius-md);
+  min-width: 11rem;
+  padding: var(--gm-space-3);
+  color: var(--gm-color-text);
+  font-family: var(--gm-font-body);
+  font-size: var(--gm-text-xs);
+  line-height: 1.6;
+}
+
+.tipHead,
+.tipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+}
+
+.tipHead {
+  margin-bottom: var(--gm-space-1);
+  font-weight: 600;
+}
+
+.tipRow {
+  color: var(--gm-color-text-muted);
+
+  &[data-zero] {
+    opacity: 0.55;
+  }
+}
+
+.tipSwatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.tipValue {
+  margin-left: auto;
+  color: var(--gm-color-text);
+  font-variant-numeric: tabular-nums;
+}

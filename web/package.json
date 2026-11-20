@@ -16,8 +16,9 @@
     "@tiptap/react": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
     "@tiptap/static-renderer": "3.31.4",
+    "echarts": "6.1.0",
     "gui-mellow": "github:Mellow-Technology/gui-mellow",
-    "next": "^16.4.2",
+    "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "sass": "^1.106.1"

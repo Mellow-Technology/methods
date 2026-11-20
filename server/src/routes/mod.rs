@@ -90,6 +90,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/work-items/{id}/description-history", get().to(work_items::description_history))
         .route("/projects/{id}/activity", get().to(work_items::project_activity))
         .route("/workspaces/{id}/activity", get().to(work_items::workspace_activity))
+        .route("/workspaces/{id}/activity/stats", get().to(work_items::workspace_activity_stats))
         .route("/workspaces/{id}/events", get().to(crate::live::events))
         .route("/activity/{id}/revert", post().to(work_items::revert))
         .route("/files", post().to(files::upload))

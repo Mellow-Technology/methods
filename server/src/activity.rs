@@ -384,6 +384,71 @@ pub async fn list(db: &PgPool, scope: Scope, page: &Page) -> ApiResult<Vec<Value
     Ok(rows.into_iter().map(present).collect())
 }
 
+#[derive(Deserialize)]
+pub struct StatsQuery {
+    /// How many days back, including today. Defaults to a week.
+    pub days: Option<i32>,
+    /// IANA time zone the days are counted in, e.g. "Europe/London".
+    /// Unknown zones fall back to UTC.
+    pub tz: Option<String>,
+}
+
+/// One day of a workspace's activity, split by kind. Every entry lands in
+/// exactly one kind, so the kinds stack to the day's total.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct DayStats {
+    pub day: chrono::NaiveDate,
+    pub created: i64,
+    pub started: i64,
+    pub completed: i64,
+    pub comments: i64,
+    pub other: i64,
+}
+
+/// Activity per day for the last `days` days, oldest first, with quiet days
+/// included as zeros.
+pub async fn daily_stats(db: &PgPool, workspace_id: Uuid, q: &StatsQuery) -> ApiResult<Vec<DayStats>> {
+    let days = q.days.unwrap_or(7).clamp(1, 366);
+    let requested = q.tz.as_deref().unwrap_or("UTC");
+    let known: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = $1)")
+        .bind(requested)
+        .fetch_one(db)
+        .await?;
+    let tz = if known { requested } else { "UTC" };
+
+    let rows = sqlx::query_as::<_, DayStats>(
+        "WITH bounds AS (SELECT (now() AT TIME ZONE $2)::date - ($3 - 1) AS first_day),
+         kinds AS (
+            SELECT (a.created_at AT TIME ZONE $2)::date AS day,
+                CASE
+                    WHEN a.entity_type = 'work_item' AND a.action = 'created' THEN 'created'
+                    WHEN a.entity_type = 'work_item' AND a.changes->'state'->>'to' = 'in_progress' THEN 'started'
+                    WHEN a.entity_type = 'work_item' AND a.changes->'state'->>'to' = 'done' THEN 'completed'
+                    WHEN a.entity_type = 'comment' AND a.action = 'created' THEN 'comments'
+                    ELSE 'other'
+                END AS kind
+            FROM activity a, bounds b
+            WHERE a.workspace_id = $1 AND a.created_at >= (b.first_day::timestamp AT TIME ZONE $2)
+         )
+         SELECT d::date AS day,
+            count(k.kind) FILTER (WHERE k.kind = 'created') AS created,
+            count(k.kind) FILTER (WHERE k.kind = 'started') AS started,
+            count(k.kind) FILTER (WHERE k.kind = 'completed') AS completed,
+            count(k.kind) FILTER (WHERE k.kind = 'comments') AS comments,
+            count(k.kind) FILTER (WHERE k.kind = 'other') AS other
+         FROM bounds b
+         CROSS JOIN generate_series(b.first_day, b.first_day + ($3 - 1), interval '1 day') d
+         LEFT JOIN kinds k ON k.day = d::date
+         GROUP BY d ORDER BY d",
+    )
+    .bind(workspace_id)
+    .bind(tz)
+    .bind(days)
+    .fetch_all(db)
+    .await?;
+    Ok(rows)
+}
+
 /// Whether an entry can be undone from the feed.
 fn revertible(e: &Entry) -> bool {
     e.reverted_by.is_none()
