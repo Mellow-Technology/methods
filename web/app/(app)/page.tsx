@@ -8,6 +8,7 @@ import { Container } from "gui-mellow/Container";
 import { Dialog } from "gui-mellow/Dialog";
 import { TextField } from "gui-mellow/Field";
 import { PageHeader } from "gui-mellow/PageHeader";
+import { ActivityChart } from "@/components/ActivityChart";
 import { ProjectForm, emptyProjectForm, projectFormBody, type ProjectFormValue } from "@/components/ProjectForm";
 import { ProjectIcon } from "@/components/ProjectIcon";
 import { StackedBar } from "@/components/StackedBar";
@@ -143,6 +144,7 @@ export default function ProjectsPage() {
 
   return (
     <Container as="main" size="wide" className={styles.page}>
+      {projects && projects.length > 0 && <ActivityChart workspaceId={workspace.id} />}
       <PageHeader
         eyebrow={workspace.name}
         title="Projects"
